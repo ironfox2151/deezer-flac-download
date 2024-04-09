@@ -628,15 +628,30 @@ func getComposer(song resSongInfoData) string {
 }
 
 func getSongPath(song resSongInfoData, album resAlbum, config configuration) string {
-	trackNum, err := strconv.Atoi(song.TrackNumber)
-	cleanArtist := strings.ReplaceAll(album.Artist.Name, "/", "-")
-	cleanAlbumTitle := strings.ReplaceAll(song.AlbTitle, "/", "-")
-	cleanSongTitle := strings.ReplaceAll(song.SngTitle, "/", "-")
-	if err != nil { panic(err) }
-	rawPath := fmt.Sprintf("%s/%s/%s - %s [WEB FLAC]/%02d - %s.flac", config.DestDir,
-		cleanArtist, cleanArtist, cleanAlbumTitle, trackNum, cleanSongTitle)
-	return path.Clean(rawPath)
+    trackNum, err := strconv.Atoi(song.TrackNumber)
+    if err != nil {
+        panic(err)
+    }
+
+    // Define a function to replace banned characters
+    replaceBannedChars := func(s string) string {
+        bannedChars := []string{":", "?", "<", ">", "\\", "*", "|", "\""}
+        for _, c := range bannedChars {
+            s = strings.ReplaceAll(s, c, "-")
+        }
+        return s
+    }
+
+    // Clean up artist, album title, and song title
+    cleanArtist := replaceBannedChars(album.Artist.Name)
+    cleanAlbumTitle := replaceBannedChars(song.AlbTitle)
+    cleanSongTitle := replaceBannedChars(song.SngTitle)
+
+    rawPath := fmt.Sprintf("%s/%s/%s - %s [WEB FLAC]/%02d - %s.flac", config.DestDir,
+        cleanArtist, cleanArtist, cleanAlbumTitle, trackNum, cleanSongTitle)
+    return path.Clean(rawPath)
 }
+
 
 func calcBfKey(songId []byte, config configuration) []byte {
 	preKey := []byte(config.PreKey)
@@ -666,10 +681,10 @@ func ensureSongDirectoryExists(songPath string, coverUrl string) error {
 	if _, err = os.Stat(songDir); errors.Is(err, os.ErrNotExist) {
 		os.MkdirAll(songDir, os.ModePerm)
 
-		textFilePath := songDir + "/info.txt"
-		textFileData := []byte("Downloaded from Deezer.\n")
-		err = os.WriteFile(textFilePath, textFileData, 0644)
-		if err != nil { return err }
+	//	textFilePath := songDir + "/info.txt"
+	//	textFileData := []byte("Downloaded from Deezer.\n")
+	//	err = os.WriteFile(textFilePath, textFileData, 0644)
+	//	if err != nil { return err }
 
 		if len(coverUrl) == 0 {
 			log.Println("Skipping cover")
